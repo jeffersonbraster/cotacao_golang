@@ -19,6 +19,7 @@ func main() {
 	defer cancel()
 	
 	req, err := http.NewRequestWithContext(ctx, "GET", "http://localhost:8080/cotacao", nil)
+
 	if err != nil {
 		panic(err)
 	}
@@ -29,20 +30,9 @@ func main() {
 		panic(err)
 	}
 
-	io.Copy(os.Stdout, res.Body)
+	defer res.Body.Close()
 
-	if err != nil {
-		panic(err)
-	}
-
-	res1, err := http.DefaultClient.Do(req)
-	if err != nil {
-		panic(err)
-	}
-
-	defer res1.Body.Close()
-
-	body, err := io.ReadAll(res1.Body)
+	body, err := io.ReadAll(res.Body)
 
 	if err != nil {
 		panic(err)
@@ -50,7 +40,11 @@ func main() {
 	
 	var c CotacaoResponse
 
-	_ = json.Unmarshal(body, &c)
+	err = json.Unmarshal(body, &c)
+
+	if err != nil {
+		panic(err)
+	}
 
 	file, err := os.Create("cotacao.txt")
 
@@ -60,9 +54,5 @@ func main() {
 
 	defer file.Close()
 
-	_, err = file.WriteString(fmt.Sprintf("Dolar: %v", c.Dolar))
-
-	if err != nil {
-		panic(err)
-	}
+	file.WriteString(fmt.Sprintf("Dolar: %v", c.Dolar))
 }
